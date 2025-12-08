@@ -4,15 +4,16 @@ import requests
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 
-from .clients import file_storage_client, file_analysis_clients
-from .schemas import Submission, Report, SubmitWorkResponse, ReportsListRResponse
-from .config import settings
+from clients import file_storage_client, file_analysis_clients
+from schemas import Submission, Report, SubmitWorkResponse, ReportsListRResponse
+from config import settings
 
 app = FastAPI(
-    title = "API Gateway - Antiplagiat",
+    title="API Gateway - Antiplagiat",
     description="Центральный сервис для системы антиплагиата",
     version="1.0",
 )
+
 
 @app.get("/health", tags=["health"])
 def health_check():
@@ -21,6 +22,7 @@ def health_check():
         "file_service_url": settings.FILE_SERVICE_URL,
         "analysis_service_url": settings.ANALYSIS_SERVICE_URL,
     }
+
 
 @app.post(
     "/api/works/submit",
@@ -66,6 +68,7 @@ async def submit_work(
             analysis_error=str(e),
         )
 
+
 @app.get(
     "/api/works/{assignment_id}/reports",
     response_model=ReportsListRResponse,
@@ -79,6 +82,7 @@ def get_reports_for_assignment(assignment_id: str):
         return ReportsListRResponse(assignment_id=assignment_id, reports=reports)
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc: HTTPException):
