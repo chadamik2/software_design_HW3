@@ -4,9 +4,9 @@ import requests
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 
-from clients import file_storage_client, file_analysis_clients
-from schemas import Submission, Report, SubmitWorkResponse, ReportsListRResponse
-from config import settings
+from .config import settings
+from .clients import file_storage_client, file_analysis_client
+from .schemas import Submission, Report, SubmitWorkResponse, ReportsListResponse
 
 app = FastAPI(
     title="API Gateway - Antiplagiat",
@@ -49,7 +49,7 @@ async def submit_work(
     file_download_url = f"{settings.FILE_SERVICE_URL}/files/{submission.file_id}/raw"
 
     try:
-        analysis_response = file_analysis_clients.analyze_submission(
+        analysis_response = file_analysis_client.analyze_submission(
             submission_id=submission.id,
             assignment_id=submission.assignment_id,
             student_id=submission.student_id,
@@ -71,15 +71,15 @@ async def submit_work(
 
 @app.get(
     "/api/works/{assignment_id}/reports",
-    response_model=ReportsListRResponse,
+    response_model=ReportsListResponse,
     tags=["reports"],
     summary="Получить отчеты по всем сдачам для конкретной работы"
 )
 def get_reports_for_assignment(assignment_id: str):
     try:
-        reports_raw = file_analysis_clients.get_reports_for_assignment(assignment_id)
+        reports_raw = file_analysis_client.get_reports_for_assignment(assignment_id)
         reports = [Report(**r) for r in reports_raw]
-        return ReportsListRResponse(assignment_id=assignment_id, reports=reports)
+        return ReportsListResponse(assignment_id=assignment_id, reports=reports)
     except requests.RequestException as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -1,0 +1,26 @@
+services:
+  gateway:
+    build: ./gateway
+    container_name: antiplagiat-gateway
+    ports:
+      - "8000:8000"
+    environment:
+      FILE_SERVICE_URL: "http://file-storage:8001"
+      ANALYSIS_SERVICE_URL: "http://file-analysis:8002"
+    depends_on:
+      - file-storage
+      - file-analysis
+
+  file-storage:
+    build: ./file_storage_service
+    container_name: antiplagiat-file-storage
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data/files:/app/data/files
+
+  file-analysis:
+    build: ./file_analysis_service
+    container_name: antiplagiat-file-analysis
+    ports:
+      - "8002:8002"

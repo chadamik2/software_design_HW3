@@ -64,4 +64,4 @@ class FileAnalysisClients:
         return response.json()
 
 file_storage_client = FileStorageClient(settings.FILE_SERVICE_URL)
-file_analysis_clients = FileAnalysisClients(settings.ANALYSIS_SERVICE_URL)
+file_analysis_client = FileAnalysisClients(settings.ANALYSIS_SERVICE_URL)

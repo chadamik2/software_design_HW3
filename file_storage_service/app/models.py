@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Integer
 
-from database import Base
+from .database import Base
 
 class Submission(Base):
     __tablename__ = 'submission'

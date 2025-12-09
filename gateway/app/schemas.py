@@ -16,12 +16,14 @@ class Report(BaseModel):
     student_id: str
     is_plagiarism: bool
     plagiarism_source_submission_id: Optional[int] = None
+    content_hash: str
+    wordcloud_url: Optional[HttpUrl] = None
 
 class SubmitWorkResponse(BaseModel):
     submission: Submission
     report: Optional[Report] = None
     analysis_error: Optional[str] = None
 
-class ReportsListRResponse(BaseModel):
+class ReportsListResponse(BaseModel):
     assignment_id: str
     reports: List[Report]
