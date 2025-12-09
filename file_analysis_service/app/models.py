@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean
 
 from .database import Base
 
+
 class Report(Base):
     __tablename__ = 'reports'
 

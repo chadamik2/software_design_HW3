@@ -10,6 +10,7 @@ class AnalysisRequest(BaseModel):
     student_id: str
     file_download_url: str
 
+
 class ReportCreate(BaseModel):
     submission_id: int
     assignment_id: str
@@ -32,6 +33,7 @@ class ReportRead(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ReportList(BaseModel):
     assignment_id: str

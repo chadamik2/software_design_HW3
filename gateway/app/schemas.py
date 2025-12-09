@@ -1,6 +1,7 @@
 from pydantic import BaseModel, HttpUrl
 from typing import Optional, List
 
+
 class Submission(BaseModel):
     id: int
     student_id: str
@@ -8,6 +9,7 @@ class Submission(BaseModel):
     assignment_id: str
     filename: str
     file_id: str
+
 
 class Report(BaseModel):
     id: int
@@ -19,10 +21,12 @@ class Report(BaseModel):
     content_hash: str
     wordcloud_url: Optional[HttpUrl] = None
 
+
 class SubmitWorkResponse(BaseModel):
     submission: Submission
     report: Optional[Report] = None
     analysis_error: Optional[str] = None
+
 
 class ReportsListResponse(BaseModel):
     assignment_id: str

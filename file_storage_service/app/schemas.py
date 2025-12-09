@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 
+
 class SubmissionCreate(BaseModel):
     student_id: str
     student_name: str
@@ -8,6 +9,7 @@ class SubmissionCreate(BaseModel):
     filename: str
     file_id: str
     file_path: str
+
 
 class SubmissionRead(BaseModel):
     id: int

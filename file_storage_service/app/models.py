@@ -3,6 +3,7 @@ from sqlalchemy import Column, String, DateTime, Integer
 
 from .database import Base
 
+
 class Submission(Base):
     __tablename__ = 'submission'
 
