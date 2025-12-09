@@ -77,7 +77,7 @@ async def submit_work(
 )
 def get_reports_for_assignment(assignment_id: str):
     try:
-        reports_raw = file_analysis_client.get_reports_for_assignment(assignment_id)
+        reports_raw = file_analysis_client.get_reports_by_assignment(assignment_id)
         reports = [Report(**r) for r in reports_raw]
         return ReportsListResponse(assignment_id=assignment_id, reports=reports)
     except requests.RequestException as e:

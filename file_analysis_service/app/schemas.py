@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, ConfigDict
+
 
 class AnalysisRequest(BaseModel):
     submission_id: int
@@ -30,8 +31,7 @@ class ReportRead(BaseModel):
     wordcloud_url: Optional[HttpUrl] = None
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ReportList(BaseModel):
     assignment_id: str

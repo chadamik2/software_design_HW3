@@ -43,7 +43,7 @@ def internal_analyze(
     except RuntimeError as e:
         raise HTTPException(status_code=502, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Unexpected error")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get(

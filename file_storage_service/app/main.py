@@ -88,7 +88,7 @@ def get_submission_by_file_id(file_id: str, db: Session = Depends(get_db)):
 
 
 @app.get(
-    "/files/{file_id}/download",
+    "/files/{file_id}/raw",
     response_class=FileResponse,
     tags=["files"],
     summary="Скачать файл по file_id"
@@ -98,7 +98,7 @@ def download_file(file_id: str, db: Session = Depends(get_db)):
     if not submission:
         raise HTTPException(status_code=404, detail="File not found")
 
-    if not os.path.exists(settings.file_path):
+    if not os.path.exists(submission.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
 
     return FileResponse(
