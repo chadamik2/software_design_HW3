@@ -156,34 +156,37 @@ docker compose up --build
 ```
 software_design_HW3/
 ├── README.md
-├── docker-compose.yml
-├── gateway/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── app/
-│       ├── config.py
-│       ├── schemas.py
-│       ├── clients.py
-│       └── main.py
-├── file_storage_service/
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   └── app/
-│       ├── config.py
-│       ├── database.py
-│       ├── models.py
-│       ├── schemas.py
-│       └── main.py
-└── file_analysis_service/
-    ├── Dockerfile
-    ├── requirements.txt
-    └── app/
-        ├── config.py
-        ├── database.py
-        ├── models.py
-        ├── schemas.py
-        ├── plagiarism.py
-        ├── wordcloud.py
-        ├── services.py
-        └── main.py
+├── .gitignore
+└── src/
+    ├── docker-compose.yml
+    ├── gateway/
+    │   ├── Dockerfile
+    │   ├── requirements.txt
+    │   └── app/
+    │       ├── config.py
+    │       ├── schemas.py
+    │       ├── clients.py
+    │       └── main.py
+    ├── file_storage_service/
+    │   ├── Dockerfile
+    │   ├── requirements.txt
+    │   └── app/
+    │       ├── config.py
+    │       ├── database.py
+    │       ├── models.py
+    │       ├── schemas.py
+    │       └── main.py
+    └── file_analysis_service/
+        ├── Dockerfile
+        ├── requirements.txt
+        └── app/
+            ├── config.py
+            ├── database.py
+            ├── models.py
+            ├── schemas.py
+            ├── plagiarism.py
+            ├── wordcloud.py
+            ├── services.py
+            └── main.py
+
 ```
