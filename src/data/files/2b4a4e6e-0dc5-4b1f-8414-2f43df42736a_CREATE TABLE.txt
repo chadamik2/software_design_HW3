@@ -1,0 +1,434 @@
+-- =========================
+-- ENUM-типы
+-- =========================
+
+CREATE TYPE balance_operation_type AS ENUM ('deposit', 'withdraw');
+CREATE TYPE two_factor_type       AS ENUM ('mobile', 'email');
+CREATE TYPE feedback_type         AS ENUM ('positive', 'neutral', 'negative');
+
+-- =========================
+-- Аккаунт: супертип + подтипы игрок / издатель
+-- =========================
+
+CREATE TABLE account (
+    account_id    SERIAL PRIMARY KEY,
+    name          TEXT NOT NULL,
+    email         TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL
+);
+
+CREATE TABLE player (
+    player_id INT PRIMARY KEY,
+    nickname  TEXT NOT NULL,
+    CONSTRAINT fk_player_account
+        FOREIGN KEY (player_id) REFERENCES account(account_id)
+            ON DELETE CASCADE
+);
+
+CREATE TABLE publisher (
+    publisher_id INT PRIMARY KEY,
+    CONSTRAINT fk_publisher_account
+        FOREIGN KEY (publisher_id) REFERENCES account(account_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Двухфакторная аутентификация: супертип + подтипы
+-- =========================
+
+CREATE TABLE two_factor_auth (
+    authentication_id SERIAL PRIMARY KEY,
+    account_id        INT NOT NULL,
+    auth_type         two_factor_type NOT NULL,
+    CONSTRAINT fk_tfa_account
+        FOREIGN KEY (account_id) REFERENCES account(account_id)
+            ON DELETE CASCADE
+);
+
+CREATE TABLE mobile_auth (
+    authentication_id INT PRIMARY KEY,
+    phone_number      TEXT NOT NULL,
+    CONSTRAINT fk_mobile_auth_tfa
+        FOREIGN KEY (authentication_id) REFERENCES two_factor_auth(authentication_id)
+            ON DELETE CASCADE
+);
+
+CREATE TABLE email_auth (
+    authentication_id INT PRIMARY KEY,
+    backup_email      TEXT,
+    CONSTRAINT fk_email_auth_tfa
+        FOREIGN KEY (authentication_id) REFERENCES two_factor_auth(authentication_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Супертип "Контент"
+-- =========================
+
+CREATE TABLE content (
+    content_id          SERIAL PRIMARY KEY,
+    name                TEXT NOT NULL,
+    description         TEXT,
+    release_date        DATE NOT NULL,
+    build_url           TEXT,
+    weight_mb           NUMERIC(12,2),
+    system_requirements TEXT
+);
+
+-- =========================
+-- Акции
+-- =========================
+
+CREATE TABLE sale (
+    sale_id      SERIAL PRIMARY KEY,
+    publisher_id INT NOT NULL,
+    name         TEXT NOT NULL,
+    description  TEXT,
+    start_date   DATE NOT NULL,
+    end_date     DATE NOT NULL,
+    discount_pct NUMERIC(5,2) NOT NULL CHECK (discount_pct >= 0 AND discount_pct <= 100),
+    CONSTRAINT fk_sale_publisher
+        FOREIGN KEY (publisher_id) REFERENCES publisher(publisher_id)
+            ON DELETE RESTRICT
+);
+
+-- =========================
+-- Товар: подтип CONTENT + подтипы игра/DLC/приложение
+-- =========================
+
+CREATE TABLE good (
+    good_id              INT PRIMARY KEY,
+    publisher_id         INT NOT NULL,
+    price                NUMERIC(12,2) NOT NULL,
+    last_price_change_at TIMESTAMPTZ,
+    sale_id              INT,  -- акция, в которой участвует товар (n:1)
+    CONSTRAINT fk_good_content
+        FOREIGN KEY (good_id) REFERENCES content(content_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_good_publisher
+        FOREIGN KEY (publisher_id) REFERENCES publisher(publisher_id)
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_good_sale
+        FOREIGN KEY (sale_id) REFERENCES sale(sale_id)
+            ON DELETE SET NULL
+);
+
+CREATE TABLE game (
+    game_id INT PRIMARY KEY,
+    genre   TEXT NOT NULL,
+    CONSTRAINT fk_game_good
+        FOREIGN KEY (game_id) REFERENCES good(good_id)
+            ON DELETE CASCADE
+);
+
+CREATE TABLE dlc (
+    dlc_id  INT PRIMARY KEY,
+    game_id INT NOT NULL,
+    genre   TEXT,
+    CONSTRAINT fk_dlc_good
+        FOREIGN KEY (dlc_id) REFERENCES good(good_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_dlc_game
+        FOREIGN KEY (game_id) REFERENCES game(game_id)
+            ON DELETE CASCADE
+);
+
+CREATE TABLE application (
+    application_id INT PRIMARY KEY,
+    CONSTRAINT fk_application_good
+        FOREIGN KEY (application_id) REFERENCES good(good_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Пользовательский контент: подтип CONTENT
+-- =========================
+
+CREATE TABLE user_content (
+    content_id      INT PRIMARY KEY,
+    owner_player_id INT NOT NULL,
+    game_id         INT NOT NULL, -- игра, к которой относится контент (1:n)
+    CONSTRAINT fk_uc_content
+        FOREIGN KEY (content_id) REFERENCES content(content_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_uc_player
+        FOREIGN KEY (owner_player_id) REFERENCES player(player_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_uc_game
+        FOREIGN KEY (game_id) REFERENCES game(game_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Набор (bundle) и связь bundle–good (m:n)
+-- =========================
+
+CREATE TABLE bundle (
+    bundle_id            SERIAL PRIMARY KEY,
+    publisher_id         INT NOT NULL,
+    name                 TEXT NOT NULL,
+    description          TEXT,
+    price                NUMERIC(12,2) NOT NULL,
+    last_price_change_at TIMESTAMPTZ,
+    sale_id              INT,
+    CONSTRAINT fk_bundle_publisher
+        FOREIGN KEY (publisher_id) REFERENCES publisher(publisher_id)
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_bundle_sale
+        FOREIGN KEY (sale_id) REFERENCES sale(sale_id)
+            ON DELETE SET NULL
+);
+
+CREATE TABLE bundle_good (
+    bundle_id INT NOT NULL,
+    good_id   INT NOT NULL,
+    PRIMARY KEY (bundle_id, good_id),
+    CONSTRAINT fk_bg_bundle
+        FOREIGN KEY (bundle_id) REFERENCES bundle(bundle_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_bg_good
+        FOREIGN KEY (good_id) REFERENCES good(good_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Достижения
+-- =========================
+
+CREATE TABLE achievement_template (
+    achievement_id SERIAL PRIMARY KEY,
+    game_id        INT NOT NULL,
+    title          TEXT NOT NULL,
+    description    TEXT,
+    image_url      TEXT,
+    CONSTRAINT fk_ach_template_game
+        FOREIGN KEY (game_id) REFERENCES game(game_id)
+            ON DELETE CASCADE
+);
+
+CREATE TABLE obtained_achievement (
+    achievement_id INT NOT NULL,
+    player_id      INT NOT NULL,
+    obtained_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (achievement_id, player_id),
+    CONSTRAINT fk_obt_ach_achievement
+        FOREIGN KEY (achievement_id) REFERENCES achievement_template(achievement_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_obt_ach_player
+        FOREIGN KEY (player_id) REFERENCES player(player_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Дружба
+-- =========================
+
+CREATE TABLE friendship (
+    account1_id INT NOT NULL,
+    account2_id INT NOT NULL,
+    started_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (account1_id, account2_id),
+    CONSTRAINT fk_friend_account1
+        FOREIGN KEY (account1_id) REFERENCES account(account_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_friend_account2
+        FOREIGN KEY (account2_id) REFERENCES account(account_id)
+            ON DELETE CASCADE,
+    CONSTRAINT chk_friend_order
+        CHECK (account1_id < account2_id)
+);
+
+-- =========================
+-- Активность игрока в товаре
+-- =========================
+
+CREATE TABLE activity (
+    action_id   SERIAL PRIMARY KEY,
+    player_id   INT NOT NULL,
+    good_id     INT NOT NULL,
+    login_time  TIMESTAMPTZ NOT NULL,
+    logout_time TIMESTAMPTZ,
+    CONSTRAINT fk_activity_player
+        FOREIGN KEY (player_id) REFERENCES player(player_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_activity_good
+        FOREIGN KEY (good_id) REFERENCES good(good_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Шаблоны предметов, внутриигровые предметы, слоты продажи
+-- =========================
+
+CREATE TABLE item_template (
+    template_id SERIAL PRIMARY KEY,
+    game_id     INT NOT NULL,
+    name        TEXT NOT NULL,
+    description TEXT,
+    image_url   TEXT,
+    CONSTRAINT fk_item_template_game
+        FOREIGN KEY (game_id) REFERENCES game(game_id)
+            ON DELETE CASCADE
+);
+
+CREATE TABLE ingame_item (
+    item_id          SERIAL PRIMARY KEY,
+    template_id      INT NOT NULL,
+    current_owner_id INT NOT NULL,
+    first_owner_id   INT NOT NULL,
+    float_value      NUMERIC(6,5),
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT fk_item_template
+        FOREIGN KEY (template_id) REFERENCES item_template(template_id)
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_item_current_owner
+        FOREIGN KEY (current_owner_id) REFERENCES player(player_id)
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_item_first_owner
+        FOREIGN KEY (first_owner_id) REFERENCES player(player_id)
+            ON DELETE RESTRICT
+);
+
+CREATE TABLE sale_slot (
+    slot_id   SERIAL PRIMARY KEY,
+    seller_id INT NOT NULL,
+    item_id   INT UNIQUE,  -- 1:1 предмет–слот
+    price     NUMERIC(12,2) NOT NULL,
+    listed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    sold_at   TIMESTAMPTZ,
+    CONSTRAINT fk_sale_slot_seller
+        FOREIGN KEY (seller_id) REFERENCES player(player_id)
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_sale_slot_item
+        FOREIGN KEY (item_id) REFERENCES ingame_item(item_id)
+            ON DELETE SET NULL
+);
+
+-- =========================
+-- Запрос на покупку
+-- =========================
+
+CREATE TABLE buy_request (
+    buy_request_id SERIAL PRIMARY KEY,
+    player_id      INT NOT NULL,
+    template_id    INT NOT NULL,
+    price          NUMERIC(12,2) NOT NULL,
+    min_float      NUMERIC(6,5),
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    closed_at      TIMESTAMPTZ,
+    slot_id        INT UNIQUE,  -- 0..1 : 0..1 связь с sale_slot
+    CONSTRAINT fk_br_player
+        FOREIGN KEY (player_id) REFERENCES player(player_id)
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_br_template
+        FOREIGN KEY (template_id) REFERENCES item_template(template_id)
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_br_slot
+        FOREIGN KEY (slot_id) REFERENCES sale_slot(slot_id)
+            ON DELETE SET NULL,
+    CONSTRAINT uq_br_template UNIQUE (template_id)  -- 1:1 запрос–шаблон
+);
+
+-- =========================
+-- Отзывы: на общий CONTENT
+-- =========================
+
+CREATE TABLE feedback (
+    feedback_id     SERIAL PRIMARY KEY,
+    player_id       INT NOT NULL,
+    content_id      INT NOT NULL,
+    feedback_kind   feedback_type NOT NULL,
+    text            TEXT,
+    time_in_product INTERVAL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT fk_feedback_player
+        FOREIGN KEY (player_id) REFERENCES player(player_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_feedback_content
+        FOREIGN KEY (content_id) REFERENCES content(content_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Обновления: на общий CONTENT (1:n)
+-- (избегаем имени update, т.к. это ключевое слово)
+-- =========================
+
+CREATE TABLE content_update (
+    update_id    SERIAL PRIMARY KEY,
+    content_id   INT NOT NULL,
+    title        TEXT NOT NULL,
+    description  TEXT,
+    release_date DATE NOT NULL,
+    CONSTRAINT fk_content_update_content
+        FOREIGN KEY (content_id) REFERENCES content(content_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Связь игрок–контент (n:m) для товара и пользовательского контента
+-- =========================
+
+CREATE TABLE player_content (
+    player_id   INT NOT NULL,
+    content_id  INT NOT NULL,
+    acquired_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (player_id, content_id),
+    CONSTRAINT fk_pc_player
+        FOREIGN KEY (player_id) REFERENCES player(player_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_pc_content
+        FOREIGN KEY (content_id) REFERENCES content(content_id)
+            ON DELETE CASCADE
+);
+
+-- =========================
+-- Транзакции: супертип + подтипы покупка / баланс
+-- (избегаем имени transaction)
+-- =========================
+
+CREATE TABLE financial_transaction (
+    transaction_id SERIAL PRIMARY KEY,
+    amount         NUMERIC(12,2) NOT NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    closed_at      TIMESTAMPTZ
+);
+
+CREATE TABLE purchase_operation (
+    transaction_id INT PRIMARY KEY,
+    buyer_id       INT NOT NULL,
+    good_id        INT,
+    bundle_id      INT,
+    sale_id        INT,
+    slot_id        INT,
+    CONSTRAINT fk_po_transaction
+        FOREIGN KEY (transaction_id) REFERENCES financial_transaction(transaction_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_po_buyer
+        FOREIGN KEY (buyer_id) REFERENCES player(player_id)
+            ON DELETE RESTRICT,
+    CONSTRAINT fk_po_good
+        FOREIGN KEY (good_id) REFERENCES good(good_id)
+            ON DELETE SET NULL,
+    CONSTRAINT fk_po_bundle
+        FOREIGN KEY (bundle_id) REFERENCES bundle(bundle_id)
+            ON DELETE SET NULL,
+    CONSTRAINT fk_po_sale
+        FOREIGN KEY (sale_id) REFERENCES sale(sale_id)
+            ON DELETE SET NULL,
+    CONSTRAINT fk_po_slot
+        FOREIGN KEY (slot_id) REFERENCES sale_slot(slot_id)
+            ON DELETE SET NULL
+);
+
+CREATE TABLE balance_operation (
+    transaction_id INT PRIMARY KEY,
+    player_id      INT NOT NULL,
+    operation_type balance_operation_type NOT NULL,
+    CONSTRAINT fk_bo_transaction
+        FOREIGN KEY (transaction_id) REFERENCES financial_transaction(transaction_id)
+            ON DELETE CASCADE,
+    CONSTRAINT fk_bo_player
+        FOREIGN KEY (player_id) REFERENCES player(player_id)
+            ON DELETE RESTRICT
+);

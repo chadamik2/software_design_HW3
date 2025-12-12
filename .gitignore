@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Environment variables
+.env
+.env.*
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads and generated files
+uploads/
+storage/
+tmp/
+
+# Test and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# FastAPI
+*.pid
