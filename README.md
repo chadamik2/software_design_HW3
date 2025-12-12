@@ -12,14 +12,14 @@
 
 ## Инструкция по запуску
 
-1 Убедитесь, что у вас установлен docker
+1. Убедитесь, что у вас установлен docker
 ```
 
 docker --version
 
 ```
 
-2 Скачайте репозиторий
+2. Скачайте репозиторий
 ```
 
 git clone https://github.com/chadamik2/software_design_HW3.git
@@ -27,20 +27,20 @@ cd software_design_HW3/src
 
 ```
 
-3 Запустите сервисы
+3. Запустите сервисы
 ```
 
 docker compose up --build
 
 ````
 
-4 Используйте http://localhost:8000/docs для работы микросервисов
+4. Используйте http://localhost:8000/docs для работы микросервисов
 
 ## Архитектура
 
 Система состоит из трёх микросервисов:
 
-1 **API Gateway**
+1. **API Gateway**
    - Принимает все входящие HTTP-запросы от клиентов
    - Обрабатывает загрузку работы (файл + метаданные)
    - Вызывает File Storing Service для сохранения файла
@@ -48,13 +48,13 @@ docker compose up --build
    - Предоставляет отчеты по работам для преподавателя
    - Реализует обработку ошибок при падении или недоступности одного из микросервисов
 
-2 **File Storing Service**
+2. **File Storing Service**
    - Отвечает только за хранение файлов и метаданных о сдаче
    - Принимает файл, сохраняет его на файловую систему
    - Сохраняет информацию о сдаче в СУБД (SQLite): кто/когда/по какому заданию
    - Позволяет получать файл по `file_id`
 
-3 **File Analysis Service**
+3. **File Analysis Service**
    - Отвечает за анализ работ и выдачу отчетов
    - Получает от API Gateway информацию о новой сдаче и URL для скачивания файла
    - Скачивает файл из File Storing Service
@@ -67,8 +67,8 @@ docker compose up --build
 
 #### Отправка работы студентом
 
-1 Студент отправляет запрос `POST /api/works/submit` на API Gateway
-2 API Gateway:
+1. Студент отправляет запрос `POST /api/works/submit` на API Gateway
+2. API Gateway:
    - передает файл и метаданные в File Storing Service `POST /files/submit`
    - получает `submission_id` и `file_id`
    - формирует `file_download_url` и вызывает File Analysis Service `POST /internal/analyze`
@@ -76,23 +76,23 @@ docker compose up --build
 
 #### Запрос аналитики преподавателем
 
-1 Преподаватель отправляет запрос `GET /api/works/{assignment_id}/reports` на API Gateway
-2 API Gateway обращается к File Analysis Service `GET /reports/assignment/{assignment_id}`
-3 Клиент получает JSON-список отчетов с флагом плагиата и ссылками на облако слов
+1. Преподаватель отправляет запрос `GET /api/works/{assignment_id}/reports` на API Gateway
+2. API Gateway обращается к File Analysis Service `GET /reports/assignment/{assignment_id}`
+3. Клиент получает JSON-список отчетов с флагом плагиата и ссылками на облако слов
 
 ## Алгоритм определения плагиата
 
-1 File Analysis Service скачивает содержимое файла по `file_download_url`
-2 Из содержимого файла формируется строка (текст)
-3 Вычисляется хэш содержимого: SHA-256 (`content_hash`)
-4 В БД микросервиса Analysis хранятся отчеты с полями:
+1. File Analysis Service скачивает содержимое файла по `file_download_url`
+2. Из содержимого файла формируется строка (текст)
+3. Вычисляется хэш содержимого: SHA-256 (`content_hash`)
+4. В БД микросервиса Analysis хранятся отчеты с полями:
    - `assignment_id`
    - `student_id`
    - `submission_id`
    - `content_hash`
    - `is_plagiarism`
    - `plagiarism_source_submission_id`
-5 Для новой сдачи:
+5. Для новой сдачи:
    - выбираются все отчеты с тем же `assignment_id` и `content_hash`
    - из выборки исключаются отчеты того же `student_id`
    - если есть хотя бы одна более ранняя сдача другим студентом —
