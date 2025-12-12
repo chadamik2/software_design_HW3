@@ -22,8 +22,8 @@ docker --version
 2 Скачайте репозиторий
 ```
 
-git clone [https://github.com/chadamik2/software_design_HW3.git](https://github.com/chadamik2/software_design_HW3.git)
-cd software_design_HW3
+git clone https://github.com/chadamik2/software_design_HW3.git
+cd software_design_HW3/src
 
 ```
 
