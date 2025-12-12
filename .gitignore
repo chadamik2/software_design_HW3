@@ -44,3 +44,6 @@ htmlcov/
 
 # FastAPI
 *.pid
+
+# Runtime data
+data/
